@@ -13,3 +13,16 @@ errors with input values when possible, but is not intended to completely
 ensure that all API accesses are without flaw. The user should make use of
 the script's troubleshooting features if an API access is not working
 as expected.
+
+Please note that there are no warranties of any kind, expressed or implied,
+that are provided you as a result of using this script. In other words, if
+you use this script and it destroys your SABnzbd queue or history or does
+any other type of damage, it's not my fault. This applies to any outcome
+of using this script that results in an undesireable impact, regardless of
+the depth of that impact. But I'm sure you were already aware of this.
+
+Seriously, though, I hope someone besides me finds this at least slightly
+useful. I developed this as a bash script solely because I felt it would be
+the quickest thing for me to do. If there are enough requests I might
+consider implementing this in something like Python, but I figure for most
+this will be perfectly sufficient.
