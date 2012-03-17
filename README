@@ -1,0 +1,14 @@
+README
+
+sab_api
+
+This script performs SABnzbd API calls as specified in the SABnzbd API
+documentation. All currently defined API functions are supported by this
+script. There is also the ability to easily return a query constructed
+explicitly by the user without having to have the API key. This script can
+also be used with included options to allow the user to construct a valid
+API URL with/without accessing it. The script attempts to identify common
+errors with input values when possible, but is not intended to completely
+ensure that all API accesses are without flaw. The user should make use of
+the script's troubleshooting features if an API access is not working
+as expected.
