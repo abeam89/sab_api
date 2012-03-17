@@ -202,7 +202,12 @@ queue                 | Advanced queue output, more verbose than the simple
 printregen-api(){
   printDashes
   echo "\
-regen-api             | Regenerate the SABnzbd API key and return it."
+regen-api             | Regenerate the SABnzbd API key and return it.
+                      | DANGEROUS! This will warn you unless the nowarn
+                      | option is specified at the command line. If you
+                      | regenerate the SABnzbd API key none of your third-party
+                      | applications will work again until you update the API
+                      | key in all of them, including sab_api"
 }
 printrestart(){
   printDashes
@@ -620,6 +625,7 @@ for arg; do
       MODE="queue"
       ;;
     regen-api)
+      DANGEROUS=true
       MODE="config&name=set_apikey"
       ;;
     restart)
