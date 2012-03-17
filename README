@@ -2,7 +2,7 @@ README
 
 sab_api
 
-This script performs SABnzbd API calls as specified in the SABnzbd API
+This bash script performs SABnzbd API calls as specified in the SABnzbd API
 documentation. All currently defined API functions are supported by this
 script. There is also the ability to easily return a query constructed
 explicitly by the user without having to have the API key. This script can
