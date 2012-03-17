@@ -1,0 +1,842 @@
+#!/bin/bash
+
+# This script performs SABnzbd API calls as specified in the SABnzbd API
+# documentation. All currently defined API functions are supported by this
+# script. There is also the ability to easily return a query constructed
+# explicitly by the user without having to have the API key. This script can
+# also be used with included options to allow the user to construct a valid
+# API URL with/without accessing it. The script attempts to identify common
+# errors with input values when possible, but is not intended to completely
+# ensure that all API accesses are without flaw. The user should make use of
+# the script's troubleshooting features if an API access is not working
+# as expected.
+
+# Generic exit code definitions
+ABORT=1
+ERROR=1
+SUCCESS=0
+
+# The path to the SABnzbd API configuration file
+SABNZBD_CONFIG="/etc/sabapi.conf"
+# A sample configuration file would be as follows:
+
+#--------------------------START SAMPLE SABAPI.CONF---------------------------#
+# Config file for SABnzbd API access
+
+# The API key for your installation of SABnzbd
+SAB_API_KEY="YOUR KEY HERE"
+
+# The URL for your installation of SABnzbd
+SAB_URL="http://localhost:8080"
+#---------------------------END SAMPLE SABAPI.CONF----------------------------#
+
+# Source the SABnzbd API configuration file (this overwrites the variables
+# above)
+if [ -f "$SABNZBD_CONFIG" ]; then
+  source $SABNZBD_CONFIG
+fi
+
+functionExists(){
+  declare -f -F $1 > /dev/null 2>&1
+  return $?
+}
+
+printDashes(){
+  echo "\
+--------------------------------------------------------------------------------"
+}
+
+# Help print functions (broken apart to allow individual printing)
+printaddid(){
+  printDashes
+  echo "\
+addid=ID              | Add nzb(s) using a Newzbin ID (ID)"
+}
+printaddpath(){
+  printDashes
+  echo "\
+addpath=PATH          | Add nzb(s) using a local file path (PATH)"
+}
+printaddurl(){
+  printDashes
+  echo "\
+addurl=URL            | Add nzb(s) using a URL (URL)"
+}
+printcategories(){
+  printDashes
+  echo "\
+categories            | Return categories from SABnzbd"
+}
+printchcat(){
+  printDashes
+  echo "\
+chcat=ITEM@CAT        | Change the category for an item (ITEM) to the category
+                      | (CAT) that is specified"
+}
+printchname(){
+  printDashes
+  echo "\
+chname=ITEM@NAME      | Change the name of an item (ITEM) to the name (NAME)
+                      | specified. The name is used for the final folder name,
+                      | and input for any post-processing sorting, if used."
+}
+printchpp(){
+  printDashes
+  echo "\
+chpp=ITEM@PP_LEVEL    | Change the post-processing level (PP_LEVEL) for the
+                      | specified item (ITEM).
+                      | Available post-processing levels are:
+                      | Skip: 0
+                      | +Repair: 1
+                      | +Repair/Unpack: 2
+                      | +Repair/Unpack/Delete: 3"
+}
+printchpriority(){
+  printDashes
+  echo "\
+chpriority=ITEM@PRI   | Change the priority (PRI) for the specified item (ITEM). 
+                      | Available priority levels are:
+                      | Default Priority: -100
+                      | Paused: -2
+                      | Low Priority: -1
+                      | Normal Priority: 0
+                      | High Priority: 1"
+}
+printchscript(){
+  printDashes
+  echo "\
+chscript=ITEM@SCRIPT  | Change the script for an item (ITEM) to the script 
+                      | (SCRIPT) that is specified"
+}
+printcompleteaction(){
+  printDashes
+  echo "\
+completeaction=ACTION | Set the action (ACTION) to be performed upon queue
+                      | completion. For a script, prepend \"script_\" to the
+                      | action. An example would be:
+                      | \"sab_api completeaction=script_examplescript.sh\""
+}
+printcustom(){
+  printDashes
+  echo "\
+custom=MODE           | Allows the user to specify a custom API call which will
+                      | be prepended with the core portion of the URL and have
+                      | the API key appended as well. MODE represents the API
+                      | mode that the user will be implementing (with all its
+                      | necessary parameters less the API key)"
+}
+printdelete-q(){
+  printDashes
+  echo "\
+delete-q=ITEM[,ITEM]  | Delete the specified item(s) (ITEM) from the SABnzbd
+                      | queue. To delete the entire queue, use:
+                      | \"sab_api delete-q=all\"
+                      | DANGEROUS! An attempt to delete \"all\" items will warn
+                      | you unless the nowarn option is specified at the command
+                      | line"
+}
+printdelete-h(){
+  printDashes
+  echo "\
+delete-h=ITEM[,ITEM]  | Delete the specified item(s) (ITEM) from the SABnzbd
+                      | history. To delete the entire history, use:
+                      | \"sab_api delete-h=all\"
+                      | DANGEROUS! An attempt to delete \"all\" items will warn
+                      | you unless the nowarn option is specified at the command
+                      | line"
+}                      
+printgetconfig(){
+  printDashes
+  echo "\
+getconfig[=SECTION]   | Get the SABnzbd configuration. Optionally specify the
+                      | section (SECTION) to be printed."
+}
+printhistory(){
+  printDashes
+  echo "\
+history               | History output. This function can be used with the
+                      | \"start\" and \"limit\" parameters or be used with its
+                      | default values for these parameters"
+}
+printhelp(){
+  printDashes
+  echo "\
+help (--help, -h, -H) | Print this help documentation"
+  printDashes
+  echo "\
+help=FEATURE          | Print this script's help documentation for a specific
+                      | feature (FEATURE) that the script provides. Some
+                      | examples are provided below:
+                      | \"sab_api help=addid\"
+                      | \"sab_api help=categories\"
+                      | \"sab_api help=--cat\""
+}
+printmove(){
+  printDashes
+  echo "\
+move=ITEM@POSITION    | Move item (ITEM) to a specific position (POSITION) in
+                      | the queue"
+}
+printpause(){
+  printDashes
+  echo "\
+pause                 | Pause the entire SABnzbd queue"
+  printDashes
+  echo "\
+pause=ITEM            | Pause the specified item (ITEM) in the queue"
+}
+printpause-for(){
+  printDashes
+  echo "\
+pause-for=DURATION    | Pause the SABnzbd queue for the specified duration
+                      | (DURATION)"
+}
+printqueue(){
+  printDashes
+  echo "\
+queue                 | Advanced queue output, more verbose than the simple
+                      | queue output. This function can be used with the
+                      | \"start\" and \"limit\" parameters or be used with its
+                      | default values for these parameters"
+}
+printregen-api(){
+  printDashes
+  echo "\
+regen-api             | Regenerate the SABnzbd API key and return it."
+}
+printrestart(){
+  printDashes
+  echo "\
+restart               | Restarts SABnzbd
+                      | DANGEROUS! This will warn you unless the nowarn option 
+                      | is specified at the command line"
+}
+printresume(){
+  printDashes
+  echo "\
+resume                | Resume the entire SABnzbd queue"
+  printDashes
+  echo "\
+resume=ITEM           | Resume the specified item (ITEM) in the queue"
+}
+printretrieve(){
+  printDashes
+  echo "\
+retrieve=ITEM         | Retrieve the details for the specified item (ITEM) in
+                      | the queue"
+}
+printretry(){
+  printDashes
+  echo "\
+retry=ITEM            | Retry the item (ITEM) specified"
+}
+printscripts(){
+  printDashes
+  echo "\
+scripts               | Return scripts available in SABnzbd"
+}
+printsetconfig(){
+  printDashes
+  echo "\
+setconfig=SEC@KW@VAL  | Set the configuration of the specified keyword (KW) in
+                      | the specified section (SEC) to the specified value (VAL)"
+}
+printshutdown(){
+  printDashes
+  echo "\
+shutdown              | Shut down SABnzbd
+                      | DANGEROUS! This will warn you unless the nowarn option 
+                      | is specified at the command line"
+}
+printspeedlimit(){
+  printDashes
+   echo "\
+speedlimit=LIMIT      | Set the download speed limit to the specified value 
+                      | (LIMIT)"
+}
+printstatus(){
+  printDashes
+  echo "\
+status                | Simple status of SABnzbd. This is now deprecated by the
+                      | SABnzbd API in favor of the advanced queue output."
+}
+printswap(){
+  printDashes
+   echo "\
+swap=ITEM1@ITEM2      | Swap the queue position of two SABnzbd queue items
+                      | which are provided by the user as ITEM1 and ITEM2"
+}
+printtogglepause(){
+  printDashes
+   echo "\
+toggle-pause          | Toggle the SABnzbd queue paused state"
+}
+printversion(){
+  printDashes
+  echo "\
+version               | Return the version of SABnzbd that is in use"
+}
+printwarning(){
+  printDashes
+  echo "\
+warning               | Return the current warning data from SABnzbd"
+}
+print--cat(){
+  printDashes
+  echo "\
+--cat=CAT             | Specify a category (CAT) for an NZB that is being added.
+                      | Note that this option is only pertinent to the various
+                      | methods for adding an NZB"
+}
+print--json(){
+  printDashes
+  echo "\
+--json (-j)           | Change the output type from XML to JSON. The output
+                      | defaults to XML. This option only pertinent to functions
+                      | which have structured output which can be specified in
+                      | the API. XML is specified as the default format simply
+                      | because JSON tends to be difficult to parse using bash."
+}
+print--limit(){
+  printDashes
+  echo "\
+--limit=LIMIT         | Specify the limit parameter (LIMIT) for the queue and
+                      | history functions. This value is defaulted to 1"
+}
+print--noaction(){
+  printDashes
+  echo "\
+--noaction (-a)       | This parameter ensures the script will not access the
+                      | URL that is constructed, but rather simply print the
+                      | URL. To print the URL and still access it, use the
+                      | \"--print-url\" option"
+}
+print--nowarn(){
+  printDashes
+  echo "\
+--nowarn (-w)         | This parameter ensures no warnings will be presented
+                      | when attempting to use the script with dangerous API
+                      | functions"
+}
+print--pp(){
+  printDashes
+  echo "\
+--pp=PP_LEVEL         | Specify the post-processing level for an NZB that is
+                      | being added. Note that this option is only pertinent to
+                      | the various methods for adding an NZB.
+                      | Available post-processing options are:
+                      | Skip: 0
+                      | +Repair: 1
+                      | +Repair/Unpack: 2
+                      | +Repair/Unpack/Delete: 3"
+}
+print--print-url(){
+  printDashes
+  echo "\
+--print-url (-u)      | Print the URL that you have constructed using the script
+                      | as well as execute it. To print the URL and not access
+                      | it, use the \"--noaction\" option"
+}
+print--priority(){
+  printDashes
+  echo "\
+--priority=PRI        | Specify the priority (PRI) for an NZB that is being
+                      | added. Note that this option is only pertinent for the
+                      | various methods of adding an NZB.
+                      | Available priority levels are:
+                      | Default Priority: -100
+                      | Paused: -2
+                      | Low Priority: -1
+                      | Normal Priority: 0
+                      | High Priority: 1"
+}
+print--script(){
+  printDashes
+  echo "\
+--script=SCRIPT       | Specify the script (SCRIPT) to be used for an NZB that
+                      | is being added. Note that this option is only pertinent
+                      | to the various methods for adding an NZB"
+}
+print--silent(){
+  printDashes
+  echo "\
+--silent (-s)         | Silent operation (no output)"
+}
+print--start(){
+  printDashes
+  echo "\
+--start=START         | Specify the start parameter (START) for the queue and
+                      | history functions. This value is defaulted to 0"
+}
+# Help function to be printed for assisting with use of the script
+printHelp(){
+  echo "Usage: sab_api function[=parameter] [options]
+
+This script allows the user to perform SABnzbd API calls from the command line
+easily. The user should provide the function they would like to perform along
+with any pertinent parameters as specified in the usage.
+
+Please see http://wiki.sabnzbd.org/api to clear up any questions about the API.
+
+The following functions are supported:"
+printaddid
+printaddpath
+printaddurl
+printcategories
+printchcat
+printchname
+printchpp
+printchpriority
+printchscript
+printcompleteaction
+printcustom
+printdelete-q
+printdelete-h
+printgetconfig
+printhistory
+printhelp
+printmove
+printpause
+printpause-for
+printqueue
+printregen-api
+printrestart
+printresume
+printretrieve
+printretry
+printscripts
+printsetconfig
+printshutdown
+printspeedlimit
+printstatus
+printswap
+printtogglepause
+printversion
+printwarning
+printDashes
+echo
+printDashes
+echo "Additional options:"
+print--cat
+print--json
+print--limit
+print--noaction
+print--nowarn
+print--pp
+print--print-url
+print--priority
+print--script
+print--silent
+print--start
+printDashes
+echo
+}
+
+# Pertinent commands with specific parameters defined
+SILENT_CURL="curl --stderr /dev/null -s"
+
+# The API URL as specified by the API documentation
+SAB_API_URL="$SAB_URL/api?mode="
+
+# The part of the URL that contains the API key
+SAB_API_KEY_URL="&apikey=$SAB_API_KEY"
+
+# If there are no parameters, print the help and exit the script
+if [ "$1" == "" ]; then
+  printHelp
+  exit $SUCCESS
+fi
+
+# Iterate through the provided parameters
+for arg; do
+  case "$arg" in
+    addid=*)
+      NEWZBIN_ID=`echo "$arg" | sed 's/addid=//'`
+      if [ ! `expr $NEWZBIN_ID + 1 2>/dev/null` ]; then
+        echo "Invalid value specified as a Newzbin ID." > /dev/stderr
+        echo "The value must be a valid integer." > /dev/stderr
+        exit $ERROR
+      fi
+      MODE="addid&name=$NEWZBIN_ID"
+      ;;
+    addpath=*)
+      NZB_PATH=`echo "$arg" | sed 's/addpath=//'`
+      if [ ! -f "$NZB_PATH" ]; then
+        echo "Invalid file path specified for the NZB to be added." 
+          > /dev/stderr
+        echo "Verify the path and try again." > /dev/stderr
+      fi
+      MODE="addlocalfile&name=$NZB_PATH"
+      ;;
+    addurl=*)
+      NZB_URL=`echo "$arg" | sed 's/addurl=//'`
+      MODE="addurl&name=$NZB_URL"
+      ;;
+    --cat=*)
+      ADD_CATEGORY=`echo "$arg" | sed 's/--cat=//'`
+      ;;
+    chcat=*)
+      CHCAT_ITEM=`echo "$arg" | sed 's/chcat=\(.*\)\@.*/\1/'`
+      NEW_CATEGORY=`echo "$arg" | sed 's/chcat=.*\@\(.*\)/\1/'`
+      MODE="change_cat&value=$CHCAT_ITEM&value2=$NEW_CATEGORY"
+      ;;
+    chname=*)
+      CHNAME_ITEM=`echo "$arg" | sed 's/chname=\(.*\)\@.*/\1/'`
+      NEW_NAME=`echo "$arg" | sed 's/chname=.*\@\(.*\)/\1/'`
+      MODE="queue&name=rename&value=$CHNAME_ITEM&value2=$NEW_NAME"
+      ;;
+    chpp=*)
+      CHPP_ITEM=`echo "$arg" | sed 's/chpp=\(.*\)\@.*/\1/'`
+      NEW_PP=`echo "$arg" | sed 's/chpp=.*\@\(.*\)/\1/'`
+      MODE="change_opts&value=$CHPP_ITEM&value2=$NEW_PP"
+      ;;
+    chpriority=*)
+      CHPRIORITY_ITEM=`echo "$arg" | sed 's/chpriority=\(.*\)\@.*/\1/'`
+      NEW_PRIORITY=`echo "$arg" | sed 's/chpriority=.*\@\(.*\)/\1/'`
+      MODE="queue&name=priority&value=$CHPRIORITY_ITEM&value2=$NEW_PRIORITY"
+      ;;
+    chscript=*)
+      CHSCRIPT_ITEM=`echo "$arg" | sed 's/chscript=\(.*\)\@.*/\1/'`
+      NEW_SCRIPT=`echo "$arg" | sed 's/chscript=.*\@\(.*\)/\1/'`
+      MODE="change_script&value=$CHSCRIPT_ITEM&value2=$NEW_SCRIPT"
+      ;;
+    categories)
+      MODE="get_cats"
+      ;;
+    completeaction=*)
+      COMPLETE_ACTION=`echo "$arg" | sed 's/completeaction=//'`
+      MODE="queue&name=change_complete_action&value=$COMPLETE_ACTION"
+      ;;
+    custom=*)
+      MODE=`echo "$arg" | sed 's/custom=//'`
+      echo "The custom URL that you have generated is:"
+      echo "${SAB_API_URL}${MODE}${SAB_API_KEY_URL}"
+      ;;
+    delete-q=*)
+      QUEUE_ITEMS=`echo "$arg" | sed 's/delete-q=//'`
+      if [ "$QUEUE_ITEMS" == "all" ]; then
+        DANGEROUS=true
+      fi
+      MODE="queue&name=delete&value=$QUEUE_ITEMS"
+      ;;
+    delete-h=*)
+      HIST_ITEMS=`echo "$arg" | sed 's/delete-h=//'`
+      if [ "$HIST_ITEMS" == "all" ]; then
+        DANGEROUS=true
+      fi
+      MODE="history&name=delete&value=$HIST_ITEMS"
+      ;;
+    getconfig)
+      MODE="get_config"
+      ;;
+    getconfig=*)
+      CONFIG_SECTION=`echo "$arg" | sed 's/getconfig=//'`
+      MODE="get_config&section=$CONFIG_SECTION"
+      ;;
+    --help)
+      printHelp
+      exit $SUCCESS
+      ;;
+    help)
+      printHelp
+      exit $SUCCESS
+      ;;
+    help=*)
+      HELP_TYPE=`echo "$arg" | sed 's/help=//'`
+      functionExists print${HELP_TYPE}
+      if [ $? -eq 0 ]; then
+        print${HELP_TYPE}
+        printDashes
+        exit $SUCCESS
+      else
+        echo "Please review the general help documentation to determine which"
+        echo "help section should be printed. The provided section does not"
+        echo "exist"
+        printhelp
+        printDashes
+        exit $ERROR
+      fi
+      ;;
+    history)
+      MODE="history"
+      ;;
+    --json)
+      JSON=true
+      ;;
+    --limit=*)
+      LIMIT=`echo "$arg" | sed 's/--limit=//'`
+      if [ ! `expr $LIMIT + 1 2> /dev/null` ]; then
+        echo "Invalid value specified for the limit parameter." > /dev/stderr
+        echo "The value must be a valid integer." > /dev/stderr
+        exit $ERROR
+      fi
+      ;;
+    move=*)
+      MOVEITEM=`echo "$arg" | sed 's/move=\(.*\)\@.*/\1/'`
+      MOVEPOSITION=`echo "$arg" | sed 's/move=.*\@\(.*\)/\1/'`
+      if [ ! `expr $MOVEPOSITION + 1 2> /dev/null` ]; then
+        echo "Invalid value specified for move item destination." > /dev/stderr
+        echo "The value must be a valid integer." > /dev/stderr
+        exit $ERROR
+      else
+        MODE="switch&value=$MOVEITEM&value2=$MOVEPOSITION"
+      fi
+      ;;
+    --noaction)
+      NOACTION=true
+      ;;
+    --nowarn)
+      NOWARN=true
+      ;;
+    pause)
+      MODE="pause"
+      ;;
+    pause=*)
+      PAUSE_ITEM=`echo "$arg" | sed 's/pause=//'`
+      MODE="queue&name=pause&value=$PAUSE_ITEM"
+      ;;
+    pause-for=*)
+      PAUSE_DURATION=`echo "$arg" | sed 's/pause-for=//'`
+      if [ `expr $PAUSE_DURATION + 1 2> /dev/null` ]; then
+        MODE="config&name=set_pause&value=$PAUSE_DURATION"
+      else
+        echo "Invalid paramater specified for pause duration." > /dev/stderr
+        echo "The pause duration must be a valid integer." > /dev/stderr
+        echo "SABnzbd was not paused as a result of the invalid input." 
+          > /dev/stderr
+        exit $ERROR
+      fi
+      ;;
+    --pp=*)
+      ADD_PP=`echo "$arg" | sed 's/--pp=//'`
+      ;;
+    --print-url)
+      PRINT_URL=true
+      ;;
+    --priority=*)
+      ADD_PRIORITY=`echo "$arg" | sed 's/--priority=//'`
+      ;;
+    queue)
+      MODE="queue"
+      ;;
+    regen-api)
+      MODE="config&name=set_apikey"
+      ;;
+    restart)
+      DANGEROUS=true
+      MODE="restart"
+      ;;
+    resume)
+      MODE="resume"
+      ;;
+    resume=*)
+      RESUME_ITEM=`echo "$arg" | sed 's/resume=//'`
+      MODE="queue&name=resume&value=$RESUME_ITEM"
+      ;;
+    retrieve=*)
+      RETRIEVE_ITEM=`echo "$arg" | sed 's/retrieve=//'`
+      MODE="retrieve"
+      ;;
+    retry=*)
+      RETRY_ITEM=`echo "$arg" | sed 's/retry=//'`
+      MODE="retry&value=$RETRY_ITEM"
+      ;;
+    --script=*)
+      ADD_SCRIPT=`echo "$arg" | sed 's/--script=//'`
+      ;;
+    scripts)
+      MODE="get_scripts"
+      ;;
+    setconfig=*)
+      CONF_SEC=`echo "$arg" | sed 's/setconfig=\(.*\)\@.*\@.*/\1/'`
+      CONF_KW=`echo "$arg" | sed 's/setconfig=.*\@\(.*\)\@.*/\1/'`
+      CONF_VAL=`echo "$arg" | sed 's/setconfig=.*\@.*\@\(.*\)/\1/'`
+
+      MODE="set_config&section=$CONF_SEC&keyword=$CONF_KW&value=$CONF_VAL"
+      ;;
+    speedlimit=*)
+      NEW_SPEED=`echo "$arg" | sed 's/speedlimit=//'`
+      if [ ! `expr $NEW_SPEED + 1 2> /dev/null` ]; then
+        echo "Invalid value specified for the speedlimit parameter." 
+          > /dev/stderr
+        echo "The value must be a valid integer." > /dev/stderr
+        exit $ERROR
+      fi
+      MODE="config&name=speedlimit&value=$NEW_SPEED"
+      ;;
+    shutdown)
+      DANGEROUS=true
+      MODE="shutdown"
+      ;;
+    --start=*)
+      START=`echo "$arg" | sed 's/--start=//'`
+      if [ ! `expr $START + 1 2> /dev/null` ]; then
+        echo "Invalid value specified for the start parameter." > /dev/stderr
+        echo "The value must be a valid integer." > /dev/stderr
+        exit $ERROR
+      fi
+      ;;
+    status)
+      MODE="qstatus"
+      ;;
+    swap=*)
+      SWAPITEM1=`echo "$arg" | sed 's/swap=\(.*\)\@.*/\1/'`
+      SWAPITEM2=`echo "$arg" | sed 's/swap=.*\@\(.*\)/\1/'`
+
+      MODE="switch&value=$SWAPITEM1&value2=$SWAPITEM2"
+      ;;
+    toggle-pause)
+      # Store the paused/idle/active status
+      SAB_INITIAL_STATE=`$SILENT_CURL \
+        "${SAB_API_URL}&output=xml${SAB_API_KEY_URL}" \
+        | grep state \
+        | sed 's/<state>//' \
+        | sed 's/<\/state>//' 2> /dev/null`
+
+      if [ "$SAB_INITIAL_STATE" = "PAUSED" ]; then
+        MODE="resume"
+      else
+        MODE="pause"
+      fi
+      ;;
+    --silent)
+      SILENT=true
+      ;;
+    version)
+      MODE="version"
+      ;;
+    warning)
+      MODE="warnings"
+      ;;
+    -*)
+      PARAMS=`echo "$arg" | sed 's/-//'`
+      NUMPARAMS=`expr ${#PARAMS} - 1 2> /dev/null`
+      for varnum in `seq 0 $NUMPARAMS`; do
+        case "${PARAMS:$varnum:1}" in
+          a)
+            NOACTION=true
+            ;;
+          h)
+            printHelp
+            exit $SUCCESS
+            ;;
+          H)
+            printHelp
+            exit $SUCCESS
+            ;;
+          j)
+            JSON=true
+            ;;
+          s)
+            SILENT=true
+            ;;
+          u)
+            PRINT_URL=true
+            ;;
+          w)
+            NOWARN=true
+            ;;
+        esac
+      done
+      ;;
+    *)
+      printHelp
+      exit $SUCCESS
+      ;;
+  esac
+done
+
+# Configure the output format
+if [ "$JSON" ]; then
+  OUTPUT="json"
+else
+  OUTPUT="xml"
+fi
+
+# Turn warnings off if specified
+if [ "$NOWARN" ]; then
+  unset DANGEROUS
+fi
+
+# Configure the start value
+if [ ! "$START" ]; then
+  START=0
+fi
+  
+# Configure the limit value
+if [ ! "$LIMIT" ]; then
+  LIMIT=1
+fi
+
+# Finish the construction of the API URL MODE parameter
+case "$MODE" in
+  add*)
+    if [ "ADD_PP" ]; then
+      MODE="${MODE}&pp=$PP"
+    fi
+    if [ "ADD_SCRIPT" ]; then
+      MODE="${MODE}&script=$ADD_SCRIPT"
+    fi
+    if [ "ADD_CATEGORY" ]; then
+      MODE="${MODE}&cat=$ADD_CATEGORY"
+    fi
+    if [ "ADD_PRIORITY" ]; then
+      MODE="${MODE}&priority=$ADD_PRIORITY"
+    fi
+    ;;
+  get_config*)
+    MODE="${MODE}&output=$OUTPUT"
+    ;;
+  get_cats)
+    MODE="get_cats&output=$OUTPUT"
+    ;;
+  get_scripts)
+    MODE="get_scripts&output=$OUTPUT"
+    ;;
+  history)
+    MODE="history&start=$START&limit=$LIMIT&output=$OUTPUT"
+    ;;
+  queue)
+    MODE="queue&start=$START&limit=$LIMIT&output=$OUTPUT"
+    ;;
+  qstatus)
+    MODE="qstatus&output=$OUTPUT"
+    ;;
+  retrieve)
+    MODE="queue&name=get_files&output=$OUTPUT&value=$RETRIEVE_ITEM"
+    ;;
+  version)
+    MODE="version&output=$OUTPUT"
+    ;;
+  warnings)
+    MODE="warnings&output=$OUTPUT"
+    ;;
+  *)
+    ;;
+esac
+
+# Prompt the user with a warning for dangerous operations in the case that
+# warnings have not been explicitly disabled by the user.
+if [ "$DANGEROUS" ]; then
+  read -p "WARNING: This operation is dangerous. Continue? (y or N): " RESPONSE
+  if [ ! "$RESPONSE" == "y" -a ! "$RESPONSE" == "Y" ]; then
+    echo "Aborting operation..."
+    exit $ABORT
+  fi
+fi
+
+# If the URL should be printed, print it
+if [ "$PRINT_URL" -o "$NOACTION" ]; then
+  echo "${SAB_API_URL}${MODE}${SAB_API_KEY_URL}"
+fi
+
+# If the URL should not be accessed, bypass this portion
+if [ ! "$NOACTION" ]; then
+  # Access the URL by constructing the various portions
+  if [ "$SILENT" ]; then
+    $SILENT_CURL ${SAB_API_URL}${MODE}${SAB_API_KEY_URL} > /dev/null
+  else
+    $SILENT_CURL ${SAB_API_URL}${MODE}${SAB_API_KEY_URL}
+  fi
+fi
+exit $SUCCESS
