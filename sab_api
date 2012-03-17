@@ -716,6 +716,9 @@ for arg; do
           a)
             NOACTION=true
             ;;
+          A)
+            NOACTION=true
+            ;;
           h)
             printHelp
             exit $SUCCESS
@@ -727,13 +730,25 @@ for arg; do
           j)
             JSON=true
             ;;
+          J)
+            JSON=true
+            ;;
           s)
+            SILENT=true
+            ;;
+          S)
             SILENT=true
             ;;
           u)
             PRINT_URL=true
             ;;
+          U)
+            PRINT_URL=true
+            ;;
           w)
+            NOWARN=true
+            ;;
+          W)
             NOWARN=true
             ;;
         esac
