@@ -9,10 +9,9 @@ constructed explicitly by the user without the API key. This script can
 also be used with included options to allow the user to construct a valid
 API URL with/without accessing it. This could be useful to generate a URL to
 use for a separate application. The script attempts to identify common
-errors with input values when possible, but is not intended to completely
-ensure that all API accesses are without flaw. The user should make use of
-the script's troubleshooting features if an API access is not working
-as expected.
+errors with input values when possible, but is not intended to ensure 
+that all API accesses are without flaw. The user should make use of the
+script's troubleshooting features if an API access is not working as expected.
 
 Please note that there are no warranties of any kind, expressed or implied,
 that are provided you as a result of using this script. In other words, if
