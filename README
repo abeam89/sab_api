@@ -4,8 +4,8 @@ sab_api
 
 This bash script performs SABnzbd API calls as specified in the SABnzbd API
 documentation. All currently defined API functions are supported by this
-script. There is also the ability to easily return a query constructed
-explicitly by the user without having to have the API key. This script can
+script. The script also provides the functionality of returning a query
+constructed explicitly by the user without the API key. This script can
 also be used with included options to allow the user to construct a valid
 API URL with/without accessing it. This could be useful to generate a URL to
 use for a separate application. The script attempts to identify common
