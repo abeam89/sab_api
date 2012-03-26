@@ -699,7 +699,7 @@ for arg; do
         | sed 's/<state>//' \
         | sed 's/<\/state>//' 2> /dev/null`
 
-      if [ "$SAB_INITIAL_STATE" = "PAUSED" ]; then
+      if [ "$SAB_INITIAL_STATE" == "PAUSED" ]; then
         MODE="resume"
       else
         MODE="pause"
