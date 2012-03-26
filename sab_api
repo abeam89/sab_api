@@ -697,8 +697,6 @@ for arg; do
         "${SAB_API_URL}qstatus&output=xml${SAB_API_KEY_URL}" \
         | xpath -q -e '//state/text()'`"
 
-      echo $SAB_INITIAL_STATE
-
       if [ "$SAB_INITIAL_STATE" == "PAUSED" ]; then
         MODE="resume"
       else
