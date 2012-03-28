@@ -397,6 +397,8 @@ with any pertinent parameters as specified in the usage.
 
 Please see http://wiki.sabnzbd.org/api to clear up any questions about the API.
 
+This project can be found on GitHub at: https://github.com/abeam89/sab_api
+
 The following functions are supported:"
 printaddid
 printaddpath
