@@ -55,6 +55,13 @@ Pretty sweet, right? I mean, I'm demonstrating likely the most useless
 functionality of the API, but sab_api with xpath becomes a pretty powerful
 tool as you might be able to tell. Anyway, hopefully that helps someone.
 
+If you're interested in more advanced features of xpath, here is a more useful
+example of a query that returns the size in MB of the 0th indexed item in the
+SABnzbd queue:
+$ sab_api queue --limit=10 | xpath -q -e '//slot[index=0]/mb/text()'
+  returns...
+100
+
 More details about the xpath syntax are available here:
 http://www.w3schools.com/xpath/xpath_syntax.asp
 

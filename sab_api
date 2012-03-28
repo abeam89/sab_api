@@ -389,7 +389,8 @@ print--url(){
 }
 # Help function to be printed for assisting with use of the script
 printHelp(){
-  echo "Usage: sab_api function[=parameter] [options]
+  echo "\
+Usage: sab_api function[=parameter] [options]
 
 This script allows the user to perform SABnzbd API calls from the command line
 easily. The user should provide the function they would like to perform along
