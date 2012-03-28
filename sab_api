@@ -488,6 +488,7 @@ for arg; do
         echo "Invalid file path specified for the NZB to be added." 
           > /dev/stderr
         echo "Verify the path and try again." > /dev/stderr
+        exit $ERROR
       fi
       MODE="addlocalfile&name=$NZB_PATH"
       ;;
@@ -579,7 +580,7 @@ for arg; do
       else
         echo "Please review the general help documentation to determine which"
         echo "help section should be printed. The provided section does not"
-        echo "exist"
+        echo "exist."
         printhelp
         printDashes
         exit $ERROR
