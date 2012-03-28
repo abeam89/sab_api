@@ -1,0 +1,60 @@
+# bash completion for sab_api
+
+have sab_api &&
+_sab_api()
+{
+  local cur
+  
+  COMPREPLY=()
+  _get_comp_words_by_ref -n = cur
+  prev="${COMP_WORDS[COMP_CWORD-1]}"
+
+  dd_opts_wo_equals="--json --noaction --nowarn --print-url --silent"
+  dd_opts_w_equals="--apikey --cat --limit --pp --priority --script --start --url"
+  dd_opts="$dd_opts_wo_equals $dd_opts_w_equals"
+  sd_opts="-a -j -s -u -w"
+  nd_opts_wo_equals="categories getconfig history help pause queue \
+                     regen-api restart resume scripts shutdown status \
+                     toggle-pause version warning"
+  nd_opts_w_equals="addid addpath addurl chcat chname chpp chpriority \
+                 chscript completeaction custom delete-q delete-h \
+                 getconfig help move pause resume retrieve retry \
+                 setconfig speedlimit swap" 
+  nd_opts="$nd_opts_wo_equals $nd_opts_w_equals"
+
+  case $cur in
+    addpath=*)
+      cur=${cur#*=}
+      _filedir
+      return 0
+      ;;
+    help=*)
+      cur=${cur#*=}
+      COMPREPLY=( $( compgen -W "$dd_opts $nd_opts" -- "$cur" ) )
+      return 0
+      ;;
+# Just an idea
+#    pause=*)
+#      cur=${cur#*=}
+#      COMPREPLY=( $( compgen -W "`sab_api history --limit=100 \
+#                     | xpath -q -e '//nzo_id/text()' | tr "\n" " "`" ) )
+#      return 0
+#      ;;
+  esac
+
+  _expand || return 0
+
+  COMPREPLY=( $( compgen -W "$dd_opts_wo_equals $nd_opts_wo_equals $sd_opts" \
+                         -- "$cur" )
+              $( compgen -W "$dd_opts_w_equals $nd_opts_w_equals" \
+                         -S '=' -- "$cur" ) )
+
+} &&
+complete -F _sab_api -o nospace sab_api
+
+# Local variables:
+# mode: shell-script
+# sh-basic-offset: 2
+# sh-indent-comment: 2
+# End:
+# ex: ts=2 sw=2 et filetype=sh
