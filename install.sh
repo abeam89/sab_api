@@ -108,6 +108,8 @@ get_sab_apiConfPath(){
   if [ -d $SAB_API_CONF_PATH ]; then
     # Remove a trailing slash if present
     SAB_API_CONF_PATH=$(cd $SAB_API_CONF_PATH; pwd)
+    # Populate the path change to the sab_api script
+    sed -i 's#/etc/sab_api.conf#$SAB_API_CONF_PATH#'
   else
     echo "Invalid path specified."
     get_sab_apiConfPath
