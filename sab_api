@@ -17,7 +17,7 @@ ERROR=1
 SUCCESS=0
 
 # The path to the SABnzbd API configuration file
-SABNZBD_CONFIG="/etc/sabapi.conf"
+SABNZBD_CONFIG="/etc/sab_api.conf"
 # A sample configuration file would be as follows:
 
 #--------------------------START SAMPLE SABAPI.CONF---------------------------#
@@ -286,6 +286,12 @@ printwarning(){
   echo "\
 warning               | Return the current warning data from SABnzbd"
 }
+print--apikey(){
+  printDashes
+  echo "\
+--apikey=APIKEY       | Specify an API key (APIKEY) at the command line to use
+                      | instead of the API key specified by the config."
+}
 print--cat(){
   printDashes
   echo "\
@@ -373,6 +379,14 @@ print--start(){
 --start=START         | Specify the start parameter (START) for the queue and
                       | history functions. This value is defaulted to 0"
 }
+print--url(){
+  printDashes
+  echo "\
+--url=SABURL          | Specify a URL to use as the SABnzbd URL (SABURL)
+                      | instead of the URL specified in the config. Keep in
+                      | mind that an invalid URL, whether here or in the config,
+                      | will cause sab_api to hang."
+}
 # Help function to be printed for assisting with use of the script
 printHelp(){
   echo "Usage: sab_api function[=parameter] [options]
@@ -422,6 +436,7 @@ printDashes
 echo
 printDashes
 echo "Additional options:"
+print--apikey
 print--cat
 print--json
 print--limit
@@ -433,6 +448,7 @@ print--priority
 print--script
 print--silent
 print--start
+print--url
 printDashes
 echo
 }
@@ -476,6 +492,11 @@ for arg; do
     addurl=*)
       NZB_URL=`echo "$arg" | sed 's/addurl=//'`
       MODE="addurl&name=$NZB_URL"
+      ;;
+    --apikey=*)
+      SAB_API_KEY=`echo "$arg" | sed 's/--apikey=//'`
+      # The part of the URL that contains the API key
+      SAB_API_KEY_URL="&apikey=$SAB_API_KEY"
       ;;
     --cat=*)
       ADD_CATEGORY=`echo "$arg" | sed 's/--cat=//'`
@@ -705,6 +726,11 @@ for arg; do
       ;;
     --silent)
       SILENT=true
+      ;;
+    --url=*)
+      SAB_URL=`echo "$arg" | sed 's/--url=//'`
+      # The API URL as specified by the API documentation
+      SAB_API_URL="$SAB_URL/api?mode="
       ;;
     version)
       MODE="version"
