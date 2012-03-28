@@ -13,15 +13,65 @@ errors with input values when possible, but is not intended to ensure
 that all API accesses are without flaw. The user should make use of the
 script's troubleshooting features if an API access is not working as expected.
 
+Based on a previous discussion regarding what features are most useful to
+users, I thought I would provide some insight on how you can make use of the
+output of this script. XML is easily parsed in Bash as a result of xpath.
+Without it, XML parsing would not be fun, but it allows the process to be
+relatively painless. Let's look at some examples.
+
+Say you want to see the current color scheme of SABnzbd (useful, I know):
+$ sab_api queue | xpath -q -e '/queue/color_scheme/text()'
+  returns...
+gold
+
+That's nice, but what's even nicer are relative paths (keeping in mind this
+could potentially lead to matches you didn't intend to make). The same result
+from above can be obtained with the following query:
+$ sab_api queue | xpath -q -e '//color_scheme/text()'
+  returns...
+gold
+
+Because '//' means that you've provided a relative path. In other words, the
+query states, "Print the text of any and all nodes named "color_scheme" within
+the output." The single '/' simply indicates an absolute path. This is a nice
+functionality that I find very useful. 
+
+The trailing text() that you see in the query provides the user the ability
+to print only the text of the node, without the tags. Let's see what happens
+if we leave it off.
+$ sab_api queue | xpath -q -e '//color_scheme'
+  returns...
+<color_scheme>gold</color_scheme>
+
+Pretty sweet, right? I mean, I'm demonstrating likely the most useless
+functionality of the API, but sab_api with xpath becomes a pretty powerful
+tool as you might be able to tell. Anyway, hopefully that helps someone.
+
+More details about the xpath syntax are available here:
+http://www.w3schools.com/xpath/xpath_syntax.asp
+
 Please note that there are no warranties of any kind, expressed or implied,
-that are provided you as a result of using this script. In other words, if
-you use this script and it destroys your SABnzbd queue or history or does
-any other type of damage, it's not my fault. This applies to any outcome
-of using this script that results in an undesireable impact, regardless of
-the depth of that impact. But I'm sure you were already aware of this.
+that are provided you as a result of using this script or any of the utilities
+provided in this package. In other words, if you use this script and it destroys
+your SABnzbd queue or history or does any other type of damage, it's not my
+fault. This applies to any outcome of using this script (or its utilities) 
+that results in an undesireable impact, regardless of the depth of that impact.
+But I'm sure you were already aware of this. That being said, I did my best
+to ensure something like that won't happen. However, again, if it does, it's
+not my fault, responsibility, or liability in any way whatsoever. That is
+the binding agreement you enter into by making any type of use of this
+software.
 
 Seriously, though, I hope someone besides me finds this at least slightly
 useful. I developed this as a bash script solely because I felt it would be
 the quickest thing for me to do. If there are enough requests I might
 consider implementing this in something like Python, but I figure for most
 this will be perfectly sufficient.
+
+
+I'm also considering implementing what would effectively be a command-line
+based interface to SABnzbd, but that would only be something I'd consider
+if there was sufficient interest because I'm not sure I'd use it all that
+much myself.
+
+Anyway, enjoy!
