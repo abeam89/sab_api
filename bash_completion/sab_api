@@ -18,7 +18,7 @@ _sab_api()
                      toggle-pause version warning"
   nd_opts_w_equals="addid addpath addurl chcat chname chpp chpriority \
                  chscript completeaction custom delete-q delete-h \
-                 getconfig help move pause resume retrieve retry \
+                 getconfig help move pause pause-for resume retrieve retry \
                  setconfig speedlimit swap" 
   nd_opts="$nd_opts_wo_equals $nd_opts_w_equals"
 
