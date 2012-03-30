@@ -745,7 +745,7 @@ for arg; do
     -*)
       PARAMS=`echo "$arg" | sed 's/-//'`
       NUMPARAMS=`expr ${#PARAMS} - 1 2> /dev/null`
-      for varnum in `seq 0 $NUMPARAMS`; do
+      for((varnum=0;varnum<=$NUMPARAMS;varnum++)); do
         case "${PARAMS:$varnum:1}" in
           a)
             NOACTION=true
