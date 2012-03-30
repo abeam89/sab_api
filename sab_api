@@ -475,8 +475,8 @@ fi
 for arg; do
   case "$arg" in
     addid=*)
-      NEWZBIN_ID=`echo "$arg" | sed 's/addid=//'`
-      if [ ! `expr $NEWZBIN_ID + 1 2>/dev/null` ]; then
+      NEWZBIN_ID=$(echo "$arg" | sed 's/addid=//')
+      if [ ! $(expr $NEWZBIN_ID + 1 2>/dev/null) ]; then
         echo "Invalid value specified as a Newzbin ID." > /dev/stderr
         echo "The value must be a valid integer." > /dev/stderr
         exit $ERROR
@@ -484,7 +484,7 @@ for arg; do
       MODE="addid&name=$NEWZBIN_ID"
       ;;
     addpath=*)
-      NZB_PATH=`echo "$arg" | sed 's/addpath=//'`
+      NZB_PATH=$(echo "$arg" | sed 's/addpath=//')
       if [ ! -f "$NZB_PATH" ]; then
         echo "Invalid file path specified for the NZB to be added." 
           > /dev/stderr
@@ -494,63 +494,63 @@ for arg; do
       MODE="addlocalfile&name=$NZB_PATH"
       ;;
     addurl=*)
-      NZB_URL=`echo "$arg" | sed 's/addurl=//'`
+      NZB_URL=$(echo "$arg" | sed 's/addurl=//')
       MODE="addurl&name=$NZB_URL"
       ;;
     --apikey=*)
-      SAB_API_KEY=`echo "$arg" | sed 's/--apikey=//'`
+      SAB_API_KEY=$(echo "$arg" | sed 's/--apikey=//')
       # The part of the URL that contains the API key
       SAB_API_KEY_URL="&apikey=$SAB_API_KEY"
       ;;
     --cat=*)
-      ADD_CATEGORY=`echo "$arg" | sed 's/--cat=//'`
+      ADD_CATEGORY=$(echo "$arg" | sed 's/--cat=//')
       ;;
     chcat=*)
-      CHCAT_ITEM=`echo "$arg" | sed 's/chcat=\(.*\)\@.*/\1/'`
-      NEW_CATEGORY=`echo "$arg" | sed 's/chcat=.*\@\(.*\)/\1/'`
+      CHCAT_ITEM=$(echo "$arg" | sed 's/chcat=\(.*\)\@.*/\1/')
+      NEW_CATEGORY=$(echo "$arg" | sed 's/chcat=.*\@\(.*\)/\1/')
       MODE="change_cat&value=$CHCAT_ITEM&value2=$NEW_CATEGORY"
       ;;
     chname=*)
-      CHNAME_ITEM=`echo "$arg" | sed 's/chname=\(.*\)\@.*/\1/'`
-      NEW_NAME=`echo "$arg" | sed 's/chname=.*\@\(.*\)/\1/'`
+      CHNAME_ITEM=$(echo "$arg" | sed 's/chname=\(.*\)\@.*/\1/')
+      NEW_NAME=$(echo "$arg" | sed 's/chname=.*\@\(.*\)/\1/')
       MODE="queue&name=rename&value=$CHNAME_ITEM&value2=$NEW_NAME"
       ;;
     chpp=*)
-      CHPP_ITEM=`echo "$arg" | sed 's/chpp=\(.*\)\@.*/\1/'`
-      NEW_PP=`echo "$arg" | sed 's/chpp=.*\@\(.*\)/\1/'`
+      CHPP_ITEM=$(echo "$arg" | sed 's/chpp=\(.*\)\@.*/\1/')
+      NEW_PP=$(echo "$arg" | sed 's/chpp=.*\@\(.*\)/\1/')
       MODE="change_opts&value=$CHPP_ITEM&value2=$NEW_PP"
       ;;
     chpriority=*)
-      CHPRIORITY_ITEM=`echo "$arg" | sed 's/chpriority=\(.*\)\@.*/\1/'`
-      NEW_PRIORITY=`echo "$arg" | sed 's/chpriority=.*\@\(.*\)/\1/'`
+      CHPRIORITY_ITEM=$(echo "$arg" | sed 's/chpriority=\(.*\)\@.*/\1/')
+      NEW_PRIORITY=$(echo "$arg" | sed 's/chpriority=.*\@\(.*\)/\1/')
       MODE="queue&name=priority&value=$CHPRIORITY_ITEM&value2=$NEW_PRIORITY"
       ;;
     chscript=*)
-      CHSCRIPT_ITEM=`echo "$arg" | sed 's/chscript=\(.*\)\@.*/\1/'`
-      NEW_SCRIPT=`echo "$arg" | sed 's/chscript=.*\@\(.*\)/\1/'`
+      CHSCRIPT_ITEM=$(echo "$arg" | sed 's/chscript=\(.*\)\@.*/\1/')
+      NEW_SCRIPT=$(echo "$arg" | sed 's/chscript=.*\@\(.*\)/\1/')
       MODE="change_script&value=$CHSCRIPT_ITEM&value2=$NEW_SCRIPT"
       ;;
     categories)
       MODE="get_cats"
       ;;
     completeaction=*)
-      COMPLETE_ACTION=`echo "$arg" | sed 's/completeaction=//'`
+      COMPLETE_ACTION=$(echo "$arg" | sed 's/completeaction=//')
       MODE="queue&name=change_complete_action&value=$COMPLETE_ACTION"
       ;;
     custom=*)
-      MODE=`echo "$arg" | sed 's/custom=//'`
+      MODE=$(echo "$arg" | sed 's/custom=//')
       echo "The custom URL that you have generated is:"
       echo "${SAB_API_URL}${MODE}${SAB_API_KEY_URL}"
       ;;
     delete-q=*)
-      QUEUE_ITEMS=`echo "$arg" | sed 's/delete-q=//'`
+      QUEUE_ITEMS=$(echo "$arg" | sed 's/delete-q=//')
       if [ "$QUEUE_ITEMS" == "all" ]; then
         DANGEROUS=true
       fi
       MODE="queue&name=delete&value=$QUEUE_ITEMS"
       ;;
     delete-h=*)
-      HIST_ITEMS=`echo "$arg" | sed 's/delete-h=//'`
+      HIST_ITEMS=$(echo "$arg" | sed 's/delete-h=//')
       if [ "$HIST_ITEMS" == "all" ]; then
         DANGEROUS=true
       fi
@@ -560,7 +560,7 @@ for arg; do
       MODE="get_config"
       ;;
     getconfig=*)
-      CONFIG_SECTION=`echo "$arg" | sed 's/getconfig=//'`
+      CONFIG_SECTION=$(echo "$arg" | sed 's/getconfig=//')
       MODE="get_config&section=$CONFIG_SECTION"
       ;;
     --help)
@@ -572,7 +572,7 @@ for arg; do
       exit $SUCCESS
       ;;
     help=*)
-      HELP_TYPE=`echo "$arg" | sed 's/help=//'`
+      HELP_TYPE=$(echo "$arg" | sed 's/help=//')
       functionExists print${HELP_TYPE}
       if [ $? -eq 0 ]; then
         print${HELP_TYPE}
@@ -594,17 +594,17 @@ for arg; do
       JSON=true
       ;;
     --limit=*)
-      LIMIT=`echo "$arg" | sed 's/--limit=//'`
-      if [ ! `expr $LIMIT + 1 2> /dev/null` ]; then
+      LIMIT=$(echo "$arg" | sed 's/--limit=//')
+      if [ ! $(expr $LIMIT + 1 2> /dev/null) ]; then
         echo "Invalid value specified for the limit parameter." > /dev/stderr
         echo "The value must be a valid integer." > /dev/stderr
         exit $ERROR
       fi
       ;;
     move=*)
-      MOVEITEM=`echo "$arg" | sed 's/move=\(.*\)\@.*/\1/'`
-      MOVEPOSITION=`echo "$arg" | sed 's/move=.*\@\(.*\)/\1/'`
-      if [ ! `expr $MOVEPOSITION + 1 2> /dev/null` ]; then
+      MOVEITEM=$(echo "$arg" | sed 's/move=\(.*\)\@.*/\1/')
+      MOVEPOSITION=$(echo "$arg" | sed 's/move=.*\@\(.*\)/\1/')
+      if [ ! $(expr $MOVEPOSITION + 1 2> /dev/null) ]; then
         echo "Invalid value specified for move item destination." > /dev/stderr
         echo "The value must be a valid integer." > /dev/stderr
         exit $ERROR
@@ -622,12 +622,12 @@ for arg; do
       MODE="pause"
       ;;
     pause=*)
-      PAUSE_ITEM=`echo "$arg" | sed 's/pause=//'`
+      PAUSE_ITEM=$(echo "$arg" | sed 's/pause=//')
       MODE="queue&name=pause&value=$PAUSE_ITEM"
       ;;
     pause-for=*)
-      PAUSE_DURATION=`echo "$arg" | sed 's/pause-for=//'`
-      if [ `expr $PAUSE_DURATION + 1 2> /dev/null` ]; then
+      PAUSE_DURATION=$(echo "$arg" | sed 's/pause-for=//')
+      if [ $(expr $PAUSE_DURATION + 1 2> /dev/null) ]; then
         MODE="config&name=set_pause&value=$PAUSE_DURATION"
       else
         echo "Invalid paramater specified for pause duration." > /dev/stderr
@@ -638,13 +638,13 @@ for arg; do
       fi
       ;;
     --pp=*)
-      ADD_PP=`echo "$arg" | sed 's/--pp=//'`
+      ADD_PP=$(echo "$arg" | sed 's/--pp=//')
       ;;
     --print-url)
       PRINT_URL=true
       ;;
     --priority=*)
-      ADD_PRIORITY=`echo "$arg" | sed 's/--priority=//'`
+      ADD_PRIORITY=$(echo "$arg" | sed 's/--priority=//')
       ;;
     queue)
       MODE="queue"
@@ -661,33 +661,33 @@ for arg; do
       MODE="resume"
       ;;
     resume=*)
-      RESUME_ITEM=`echo "$arg" | sed 's/resume=//'`
+      RESUME_ITEM=$(echo "$arg" | sed 's/resume=//')
       MODE="queue&name=resume&value=$RESUME_ITEM"
       ;;
     retrieve=*)
-      RETRIEVE_ITEM=`echo "$arg" | sed 's/retrieve=//'`
+      RETRIEVE_ITEM=$(echo "$arg" | sed 's/retrieve=//')
       MODE="retrieve"
       ;;
     retry=*)
-      RETRY_ITEM=`echo "$arg" | sed 's/retry=//'`
+      RETRY_ITEM=$(echo "$arg" | sed 's/retry=//')
       MODE="retry&value=$RETRY_ITEM"
       ;;
     --script=*)
-      ADD_SCRIPT=`echo "$arg" | sed 's/--script=//'`
+      ADD_SCRIPT=$(echo "$arg" | sed 's/--script=//')
       ;;
     scripts)
       MODE="get_scripts"
       ;;
     setconfig=*)
-      CONF_SEC=`echo "$arg" | sed 's/setconfig=\(.*\)\@.*\@.*/\1/'`
-      CONF_KW=`echo "$arg" | sed 's/setconfig=.*\@\(.*\)\@.*/\1/'`
-      CONF_VAL=`echo "$arg" | sed 's/setconfig=.*\@.*\@\(.*\)/\1/'`
+      CONF_SEC=$(echo "$arg" | sed 's/setconfig=\(.*\)\@.*\@.*/\1/')
+      CONF_KW=$(echo "$arg" | sed 's/setconfig=.*\@\(.*\)\@.*/\1/')
+      CONF_VAL=$(echo "$arg" | sed 's/setconfig=.*\@.*\@\(.*\)/\1/')
 
       MODE="set_config&section=$CONF_SEC&keyword=$CONF_KW&value=$CONF_VAL"
       ;;
     speedlimit=*)
-      NEW_SPEED=`echo "$arg" | sed 's/speedlimit=//'`
-      if [ ! `expr $NEW_SPEED + 1 2> /dev/null` ]; then
+      NEW_SPEED=$(echo "$arg" | sed 's/speedlimit=//')
+      if [ ! $(expr $NEW_SPEED + 1 2> /dev/null) ]; then
         echo "Invalid value specified for the speedlimit parameter." 
           > /dev/stderr
         echo "The value must be a valid integer." > /dev/stderr
@@ -700,8 +700,8 @@ for arg; do
       MODE="shutdown"
       ;;
     --start=*)
-      START=`echo "$arg" | sed 's/--start=//'`
-      if [ ! `expr $START + 1 2> /dev/null` ]; then
+      START=$(echo "$arg" | sed 's/--start=//')
+      if [ ! $(expr $START + 1 2> /dev/null) ]; then
         echo "Invalid value specified for the start parameter." > /dev/stderr
         echo "The value must be a valid integer." > /dev/stderr
         exit $ERROR
@@ -711,8 +711,8 @@ for arg; do
       MODE="qstatus"
       ;;
     swap=*)
-      SWAPITEM1=`echo "$arg" | sed 's/swap=\(.*\)\@.*/\1/'`
-      SWAPITEM2=`echo "$arg" | sed 's/swap=.*\@\(.*\)/\1/'`
+      SWAPITEM1=$(echo "$arg" | sed 's/swap=\(.*\)\@.*/\1/')
+      SWAPITEM2=$(echo "$arg" | sed 's/swap=.*\@\(.*\)/\1/')
 
       MODE="switch&value=$SWAPITEM1&value2=$SWAPITEM2"
       ;;
@@ -732,7 +732,7 @@ for arg; do
       SILENT=true
       ;;
     --url=*)
-      SAB_URL=`echo "$arg" | sed 's/--url=//'`
+      SAB_URL=$(echo "$arg" | sed 's/--url=//')
       # The API URL as specified by the API documentation
       SAB_API_URL="$SAB_URL/api?mode="
       ;;
@@ -743,8 +743,8 @@ for arg; do
       MODE="warnings"
       ;;
     -*)
-      PARAMS=`echo "$arg" | sed 's/-//'`
-      NUMPARAMS=`expr ${#PARAMS} - 1 2> /dev/null`
+      PARAMS=$(echo "$arg" | sed 's/-//')
+      NUMPARAMS=$(expr ${#PARAMS} - 1 2> /dev/null)
       for((varnum=0;varnum<=$NUMPARAMS;varnum++)); do
         case "${PARAMS:$varnum:1}" in
           a)
