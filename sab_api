@@ -28,12 +28,17 @@ SAB_API_KEY="YOUR KEY HERE"
 
 # The URL for your installation of SABnzbd
 SAB_URL="http://localhost:8080"
+
+# Assume dependencies - uncomment this if you can confirm dependencies are met
+#ASSUME_DEPS=true
 #---------------------------END SAMPLE SABAPI.CONF----------------------------#
 
 # Source the SABnzbd API configuration file (this overwrites the variables
 # above)
 if [ -f "$SABNZBD_CONFIG" ]; then
   source $SABNZBD_CONFIG
+  # Only assume dependencies are met when a configuration file is in place
+  ASSUME_DEPS=true
 fi
 
 functionExists(){
@@ -471,6 +476,25 @@ if [ "$1" == "" ]; then
   exit $SUCCESS
 fi
 
+# Check for dependencies unless we're assuming that they are met
+if [ ! "$ASSUME_DEPS" ]; then
+  if [ ! "$(command -v curl 2>/dev/null)" ]; then
+    echo "\
+Yikes! Unfortunately, you can't use sab_api without curl...for Ubuntu users
+you can install it with:
+sudo apt-get install curl"
+    # Exit, because without curl this script is useless
+    exit $ERROR
+  fi
+  if [ ! "$(command -v xpath 2>/dev/null)" ]; then
+    echo "\
+Uh-oh!
+It doesn't look like you have xpath installed. This will be necessary to use
+all of the features sab_api offers. For Ubuntu, you can install it with:
+sudo apt-get install libxml-xpath-perl"
+    # Don't exit for this because some functionality is available without xpath
+  fi
+fi
 # Iterate through the provided parameters
 for arg; do
   case "$arg" in
