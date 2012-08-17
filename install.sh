@@ -78,16 +78,20 @@ sab_apiInstallSuccess()
 
 # Ensure dependencies are satisfied
 sab_apiDependencies(){
-  DEPENDENCIES="curl"
+  DEPENDENCIES="curl xpath"
 
   echo "Checking dependencies..."
   for dep in $DEPENDENCIES; do
-    if [ ! `which $dep 2>/dev/null` ]; then
+    if [ ! $(command -v $dep 2>/dev/null) ]; then
       echo "sab_api requires the installation of $dep to run properly. Please"
       echo "verify that $dep is installed and try to run the installer again."
       echo "If you are using Ubuntu or some derivative of Debian, you might"
       echo "try the following command to install $dep:"
-      echo "sudo apt-get install $dep"
+      if [ "$dep" == "xpath" ]; then
+        echo "sudo apt-get install libxml-xpath-perl"
+      else
+        echo "sudo apt-get install $dep"
+      fi
       exit $ERROR
     fi
     echo "Dependency $dep satisfied."
@@ -159,7 +163,7 @@ linkExistingSABConfig(){
 }
 installSABConfig(){
   read -n1 -p \
-    "Link your config to '$SAB_API_CONF_PATH/$SAB_API_CONF_FILE'? (y or n) " \
+    "Link your config from '$SAB_API_CONF_PATH/$SAB_API_CONF_FILE'? (y or n) " \
     RESPONSE
   echo
   if [ "$RESPONSE" == "y" -o "$RESPONSE" == "Y" ]; then
